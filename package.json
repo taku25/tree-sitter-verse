@@ -1,0 +1,54 @@
+{
+  "name": "tree-sitter-verse",
+  "version": "0.1.0",
+  "description": "Verse grammar for tree-sitter",
+  "main": "bindings/node",
+  "keywords": [
+    "parser",
+    "tree-sitter",
+    "verse",
+    "uefn",
+    "fortnite"
+  ],
+  "author": "",
+  "license": "MIT",
+  "files": [
+    "grammar.js",
+    "binding.gyp",
+    "prebuilds/**",
+    "bindings/node/*",
+    "queries/*",
+    "src/**"
+  ],
+  "dependencies": {
+    "node-addon-api": "^8.0.0",
+    "node-gyp-build": "^4.8.0"
+  },
+  "peerDependencies": {
+    "tree-sitter": "^0.22.0"
+  },
+  "peerDependenciesMeta": {
+    "tree-sitter": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "^0.22.6"
+  },
+  "scripts": {
+    "build": "tree-sitter generate && node-gyp-build",
+    "test": "tree-sitter test",
+    "lint": "tree-sitter generate"
+  },
+  "tree-sitter": [
+    {
+      "scope": "source.verse",
+      "file-types": [
+        "verse"
+      ],
+      "highlights": "queries/highlights.scm",
+      "locals": "queries/locals.scm",
+      "tags": "queries/tags.scm"
+    }
+  ]
+}

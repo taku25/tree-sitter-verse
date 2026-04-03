@@ -1,0 +1,129 @@
+================================================================================
+Simple function definition
+================================================================================
+
+Add(A:int, B:int):int = A + B
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function_definition
+    name: (identifier)
+    parameters: (parameter_list
+      (positional_parameter name: (identifier) type: (builtin_type))
+      (positional_parameter name: (identifier) type: (builtin_type)))
+    return_type: (builtin_type)
+    body: (binary_expression
+      left: (identifier)
+      right: (identifier))))
+
+================================================================================
+Function with effect specifiers
+================================================================================
+
+GetScore()<reads>:int = Score
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function_definition
+    name: (identifier)
+    effect_specifiers: (specifier_list
+      (specifier name: (specifier_name)))
+    return_type: (builtin_type)
+    body: (identifier)))
+
+================================================================================
+Function with specifiers on name
+================================================================================
+
+RunExample<public>()<suspends>:void = {}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function_definition
+    name: (identifier)
+    specifiers: (specifier_list
+      (specifier name: (specifier_name)))
+    effect_specifiers: (specifier_list
+      (specifier name: (specifier_name)))
+    return_type: (builtin_type)
+    body: (brace_block)))
+
+================================================================================
+Function with named parameters
+================================================================================
+
+Log(Message:string, ?Level:int=1):string = Message
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function_definition
+    name: (identifier)
+    parameters: (parameter_list
+      (positional_parameter name: (identifier) type: (builtin_type))
+      (named_parameter
+        name: (identifier)
+        type: (builtin_type)
+        default: (integer_literal)))
+    return_type: (builtin_type)
+    body: (identifier)))
+
+================================================================================
+Class definition (braces)
+================================================================================
+
+player := class{
+    var Level:int = 1
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (class_definition
+      (var_declaration
+        name: (identifier)
+        type: (builtin_type)
+        value: (integer_literal)))))
+
+================================================================================
+Enum definition (braces)
+================================================================================
+
+item_rarity := enum{
+    common
+    rare
+    legendary
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (enum_definition
+      name: (identifier)
+      name: (identifier)
+      name: (identifier))))
+
+================================================================================
+Struct definition
+================================================================================
+
+point := struct{
+    X:float = 0.0
+    Y:float = 0.0
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (struct_definition
+      (field_declaration name: (identifier) type: (builtin_type) default: (float_literal))
+      (field_declaration name: (identifier) type: (builtin_type) default: (float_literal)))))

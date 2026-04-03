@@ -1,0 +1,19 @@
+# ── Node / npm ───────────────────────────────────────────────────────────────
+node_modules/
+
+# ── Build outputs ─────────────────────────────────────────────────────────────
+build/
+prebuilds/
+bindings/node/build/
+*.node
+
+# ── tree-sitter generated (src/parser.c is intentionally committed) ───────────
+# src/parser.c  <-- keep in VCS so installers don't need to run generate
+
+# ── Editor / OS ──────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/

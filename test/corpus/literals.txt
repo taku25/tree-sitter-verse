@@ -1,0 +1,76 @@
+================================================================================
+Integer literals
+================================================================================
+
+X := 42
+Y := 0xFF
+Z := 0b1010
+W := 0o777
+Large := 9223372036854775807
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (type_definition name: (identifier) value: (integer_literal))
+  (type_definition name: (identifier) value: (integer_literal))
+  (type_definition name: (identifier) value: (integer_literal))
+  (type_definition name: (identifier) value: (integer_literal))
+  (type_definition name: (identifier) value: (integer_literal)))
+
+================================================================================
+Float literals
+================================================================================
+
+Pi := 3.14159
+Small := 1.0e-5
+Big := 2.5e+3
+Typed := 12.34f64
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (type_definition name: (identifier) value: (float_literal))
+  (type_definition name: (identifier) value: (float_literal))
+  (type_definition name: (identifier) value: (float_literal))
+  (type_definition name: (identifier) value: (float_literal)))
+
+================================================================================
+Boolean literals
+================================================================================
+
+IsReady := true
+IsComplete := false
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (type_definition name: (identifier) value: (boolean_literal))
+  (type_definition name: (identifier) value: (boolean_literal)))
+
+================================================================================
+String literals
+================================================================================
+
+Greeting := "Hello, World!"
+Empty := ""
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (type_definition name: (identifier) value: (string_literal
+    (string_content)))
+  (type_definition name: (identifier) value: (string_literal)))
+
+================================================================================
+Line comments
+================================================================================
+
+# This is a comment
+X := 42 # inline comment
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (line_comment)
+  (type_definition name: (identifier) value: (integer_literal))
+  (line_comment))

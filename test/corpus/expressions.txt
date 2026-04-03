@@ -1,0 +1,131 @@
+================================================================================
+Binary arithmetic
+================================================================================
+
+Sum := 10 + 20
+Prod := 6 * 7
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (type_definition name: (identifier) value: (binary_expression
+    left: (integer_literal)
+    right: (integer_literal)))
+  (type_definition name: (identifier) value: (binary_expression
+    left: (integer_literal)
+    right: (integer_literal))))
+
+================================================================================
+Comparison
+================================================================================
+
+IsAbove := Score > 100
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (type_definition name: (identifier) value: (binary_expression
+    left: (identifier)
+    right: (integer_literal))))
+
+================================================================================
+Logical operators
+================================================================================
+
+Both := A and B
+Either := A or B
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (type_definition name: (identifier) value: (binary_expression
+    left: (identifier)
+    right: (identifier)))
+  (type_definition name: (identifier) value: (binary_expression
+    left: (identifier)
+    right: (identifier))))
+
+================================================================================
+Unary operators
+================================================================================
+
+Neg := -42
+NotFlag := not Flag
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (type_definition name: (identifier) value: (unary_expression
+    operand: (integer_literal)))
+  (type_definition name: (identifier) value: (unary_expression
+    operand: (identifier))))
+
+================================================================================
+Range expression
+================================================================================
+
+R := 0..100
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (type_definition name: (identifier) value: (range_expression
+    start: (integer_literal)
+    end: (integer_literal))))
+
+================================================================================
+Query expression
+================================================================================
+
+if (IsReady?):
+    StartGame()
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (if_expression
+    condition: (if_condition
+      (query_expression operand: (identifier)))
+    consequence: (colon_block
+      (call_expression function: (identifier)))))
+
+================================================================================
+Member access
+================================================================================
+
+X := Player.Level
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (type_definition name: (identifier) value: (member_access
+    object: (identifier)
+    member: (identifier))))
+
+================================================================================
+Function call
+================================================================================
+
+Result := Compute(X, Y)
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (type_definition name: (identifier) value: (call_expression
+    function: (identifier)
+    arguments: (argument_list
+      (identifier)
+      (identifier)))))
+
+================================================================================
+Failable call (square brackets)
+================================================================================
+
+Result := GetValue[Key]
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (type_definition name: (identifier) value: (index_expression
+    object: (identifier)
+    index: (identifier))))

@@ -1,0 +1,34 @@
+name: Feature Request
+description: Request support for new Verse syntax or grammar improvement
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion! Verse is an evolving language — new syntax proposals are always welcome.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What syntax or feature should be added?
+      description: Describe the Verse syntax that is not currently handled.
+    validations:
+      required: true
+
+  - type: textarea
+    id: example
+    attributes:
+      label: Example code
+      description: Paste an example of the Verse code that should parse correctly.
+      render: verse
+    validations:
+      required: false
+
+  - type: textarea
+    id: spec-reference
+    attributes:
+      label: Language spec reference
+      description: |
+        If this is documented in https://github.com/verselang/book, please link to the relevant section.
+    validations:
+      required: false

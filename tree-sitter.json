@@ -1,0 +1,20 @@
+{
+  "grammars": [
+    {
+      "name": "verse",
+      "camelcase": "Verse",
+      "scope": "source.verse",
+      "file-types": ["verse"],
+      "injection-regex": "verse",
+      "highlights": "queries/highlights.scm",
+      "locals": "queries/locals.scm",
+      "tags": "queries/tags.scm"
+    }
+  ],
+  "metadata": {
+    "name": "Verse",
+    "description": "Verse grammar for tree-sitter",
+    "version": "0.1.0",
+    "license": "MIT"
+  }
+}

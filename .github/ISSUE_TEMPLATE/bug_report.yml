@@ -1,0 +1,42 @@
+name: Bug Report
+description: Report a parse error or incorrect syntax tree
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! Please fill in as much detail as possible.
+
+  - type: textarea
+    id: verse-code
+    attributes:
+      label: Verse code that is parsed incorrectly
+      description: Paste the minimal Verse snippet that triggers the bug.
+      render: verse
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected parse tree
+      description: What should the tree look like? (run `tree-sitter parse file.verse`)
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual parse tree
+      description: What does the tree actually look like?
+      render: text
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: tree-sitter-verse version / commit
+    validations:
+      required: false
