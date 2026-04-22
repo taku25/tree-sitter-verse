@@ -34,7 +34,7 @@
 ; ─────────────────────────────────────────────
 
 (function_definition
-  name: (identifier) @name) @definition.function
+  name: (_) @name) @definition.function
 
 ; ─────────────────────────────────────────────
 ; Variable/constant definitions
@@ -50,5 +50,5 @@
 ; Enum variants (useful as tags too)
 ; ─────────────────────────────────────────────
 
-(enum_definition
+(enum_variant
   name: (identifier) @name) @definition.constant

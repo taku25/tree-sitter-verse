@@ -45,13 +45,6 @@ module.exports = grammar({
   word: $ => $.identifier,
 
   conflicts: $ => [
-    // identifier '(' can start a function_definition, type_definition, OR a call_expression
-    [$.function_definition, $.type_definition, $._expression],
-    // '(' can start an extension_function_definition, parenthesized expression, or module_scoped_identifier
-    [$.extension_function_definition, $._expression],
-    [$.extension_function_definition, $._expression, $.module_scoped_identifier],
-    // '(' can start a type_definition (via module_scoped_identifier name) or a parenthesized expression
-    [$.type_definition, $._expression, $.module_scoped_identifier],
     // In enum_variant, '(' after name could be associated type OR start of next module_scoped_identifier variant
     [$.enum_variant],
     // _callable_expression is a subset of _expression; shared alternatives create lookahead conflicts

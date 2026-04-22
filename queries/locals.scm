@@ -41,7 +41,7 @@
 
 ; Function definition
 (function_definition
-  name: (identifier) @local.definition)
+  name: (_) @local.definition)
 
 ; Variable declaration
 (var_declaration
@@ -52,7 +52,7 @@
   name: (identifier) @local.definition)
 
 ; Enum variant
-(enum_definition
+(enum_variant
   name: (identifier) @local.definition)
 
 ; Parameter bindings

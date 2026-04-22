@@ -4299,25 +4299,6 @@
   ],
   "conflicts": [
     [
-      "function_definition",
-      "type_definition",
-      "_expression"
-    ],
-    [
-      "extension_function_definition",
-      "_expression"
-    ],
-    [
-      "extension_function_definition",
-      "_expression",
-      "module_scoped_identifier"
-    ],
-    [
-      "type_definition",
-      "_expression",
-      "module_scoped_identifier"
-    ],
-    [
       "enum_variant"
     ],
     [

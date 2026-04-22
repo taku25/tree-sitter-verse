@@ -81,13 +81,13 @@
 (enum_definition) @type
 (interface_definition) @type
 
-; Enum variant names (variants appear as name: children of enum_definition)
-(enum_definition
+; Enum variant names
+(enum_variant
   name: (identifier) @constant)
 
 ; Function definitions
 (function_definition
-  name: (identifier) @function)
+  name: (_) @function)
 
 ; Field names in declarations
 (field_declaration
