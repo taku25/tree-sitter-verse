@@ -92,20 +92,23 @@ static bool scan(Scanner *s, TSLexer *lexer, const bool *valid_symbols) {
      but we need to detect '<#' before '<' is consumed by grammar.)  */
   if (valid_symbols[BLOCK_COMMENT]) {
     if (lexer->lookahead == '<') {
-      /* Peek ahead: we need the next char to be '#'. Use mark_end
-         trick: advance '<', check '#', if not restore. We cannot
-         restore in tree-sitter scanner, so we only commit when sure. */
-      /* Actually: tree-sitter will call us only when BLOCK_COMMENT
-         is valid AND we're at a position where '<' appears. Advance. */
       lexer->mark_end(lexer);
       advance(lexer);
       if (lexer->lookahead == '#') {
-        /* Confirmed: this is a block comment. Back up to start. */
-        /* We already advanced past '<' — use a local buffer trick.
-           Actually tree-sitter scan cannot back up. We have to do
-           the full scan from the '<'. Reset: we consumed '<', now
-           continue with the '#' logic inline. */
         advance(lexer); /* '#' */
+        /* Special case: <#> (immediately followed by '>') is the UEFN
+           single-line comment form. Scan to EOL only, not to '#>'. */
+        if (lexer->lookahead == '>') {
+          advance(lexer); /* '>' */
+          while (lexer->lookahead != '\n' && lexer->lookahead != '\r' &&
+                 lexer->lookahead != 0) {
+            advance(lexer);
+          }
+          lexer->mark_end(lexer);
+          lexer->result_symbol = BLOCK_COMMENT;
+          return true;
+        }
+        /* Normal nested block comment: scan until matching '#>' or EOF. */
         int depth = 1;
         while (lexer->lookahead != 0) {
           if (lexer->lookahead == '<') {
@@ -118,6 +121,7 @@ static bool scan(Scanner *s, TSLexer *lexer, const bool *valid_symbols) {
             advance(lexer);
           }
         }
+        lexer->mark_end(lexer); /* token ends at closing #> or EOF (overrides initial mark) */
         lexer->result_symbol = BLOCK_COMMENT;
         return true;
       }
@@ -141,6 +145,27 @@ static bool scan(Scanner *s, TSLexer *lexer, const bool *valid_symbols) {
      an expression's brackets (the grammar rules ensure that).
      Therefore, bracket_depth tracking is unnecessary in this
      approach — we just rely on the grammar constraints. */
+
+  /* ── EOF: emit phantom INDENT (for empty bodies) or DEDENT ──── */
+  if (lexer->lookahead == 0) {
+    if (valid_symbols[INDENT] && !valid_symbols[DEDENT]) {
+      /* Empty body at end-of-file: `foo := interface:` with nothing after.
+         Push a phantom indent level so the following DEDENT call can close it. */
+      uint32_t prev = current_indent(s);
+      if (s->stack_size < MAX_INDENT) {
+        s->indent_stack[s->stack_size++] = prev + 1;
+      }
+      lexer->result_symbol = INDENT;
+      return true;
+    }
+    if (valid_symbols[DEDENT] && s->stack_size > 1) {
+      /* Close any remaining open indentation levels at EOF. */
+      s->stack_size--;
+      lexer->result_symbol = DEDENT;
+      return true;
+    }
+    return false;
+  }
 
   /* ── INDENT / DEDENT: only after a newline ────────────────────  */
   if (lexer->lookahead != '\n' && lexer->lookahead != '\r') {
@@ -183,6 +208,27 @@ static bool scan(Scanner *s, TSLexer *lexer, const bool *valid_symbols) {
       continue;
     }
 
+    /* EOF reached after consuming newlines/blanks/comments. */
+    if (lexer->lookahead == 0) {
+      uint32_t prev = current_indent(s);
+      /* Prefer closing open bodies at EOF over opening new phantom bodies.
+         Only emit phantom INDENT if DEDENT is not also valid (i.e., we're
+         strictly waiting for an INDENT to start an empty body). */
+      if (valid_symbols[INDENT] && !valid_symbols[DEDENT]) {
+        if (s->stack_size < MAX_INDENT) {
+          s->indent_stack[s->stack_size++] = prev + 1;
+        }
+        lexer->result_symbol = INDENT;
+        return true;
+      }
+      if (valid_symbols[DEDENT] && s->stack_size > 1) {
+        s->stack_size--;
+        lexer->result_symbol = DEDENT;
+        return true;
+      }
+      return false;
+    }
+
     uint32_t prev = current_indent(s);
 
     if (col > prev && valid_symbols[INDENT]) {
@@ -190,6 +236,26 @@ static bool scan(Scanner *s, TSLexer *lexer, const bool *valid_symbols) {
       if (s->stack_size < MAX_INDENT) {
         s->indent_stack[s->stack_size++] = col;
       }
+      lexer->result_symbol = INDENT;
+      return true;
+    }
+
+    /* Empty body: grammar expects INDENT but next non-blank content is at
+       the same indentation level (or lower). This happens with abstract/native
+       classes that have no members (e.g. `abstract_class<native>:` immediately
+       followed by a sibling declaration at the same level).
+       Emit a phantom INDENT by pushing (prev+1) and schedule an immediate
+       DEDENT via pending_dedents=1. This produces an empty block and prevents
+       the next sibling from being erroneously nested inside this empty body.
+       After INDENT is consumed, the scanner is called again at the same lexer
+       position (still pointing at the sibling's first character, not a newline).
+       Without pending_dedents, the `lookahead != '\n'` guard would return false
+       and DEDENT would never fire, causing infinite nesting. */
+    if (col <= prev && valid_symbols[INDENT]) {
+      if (s->stack_size < MAX_INDENT) {
+        s->indent_stack[s->stack_size++] = prev + 1;
+      }
+      s->pending_dedents = 1;
       lexer->result_symbol = INDENT;
       return true;
     }

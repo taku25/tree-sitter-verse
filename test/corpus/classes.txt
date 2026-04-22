@@ -1,0 +1,314 @@
+==================
+empty native class in module
+==================
+
+Game<public> := module:
+    foo<native><public> := class:
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    specifiers: (specifier_list
+      (specifier
+        name: (specifier_name)))
+    value: (module_definition
+      (type_definition
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        value: (class_definition)))))
+
+==================
+class with field
+==================
+
+Game<public> := module:
+    foo<native><public> := class:
+        Bar<native><public>:int
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    specifiers: (specifier_list
+      (specifier
+        name: (specifier_name)))
+    value: (module_definition
+      (type_definition
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        value: (class_definition
+          (field_declaration
+            name: (identifier)
+            specifiers: (specifier_list
+              (specifier
+                name: (specifier_name))
+              (specifier
+                name: (specifier_name)))
+            type: (builtin_type)))))))
+
+==================
+class with parent and method
+==================
+
+Game<public> := module:
+    entity<native><public> := class<concrete><unique>(base_entity):
+        GetParent<native><final><public>()<reads><decides>:entity
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    specifiers: (specifier_list
+      (specifier
+        name: (specifier_name)))
+    value: (module_definition
+      (type_definition
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        value: (class_definition
+          specifiers: (specifier_list
+            (specifier
+              name: (specifier_name))
+            (specifier
+              name: (specifier_name)))
+          base: (identifier)
+          (function_definition
+            name: (identifier)
+            specifiers: (specifier_list
+              (specifier
+                name: (specifier_name))
+              (specifier
+                name: (specifier_name))
+              (specifier
+                name: (specifier_name)))
+            effect_specifiers: (specifier_list
+              (specifier
+                name: (specifier_name))
+              (specifier
+                name: (specifier_name)))
+            return_type: (identifier)))))))
+
+==================
+class with scoped specifier
+==================
+
+Assets := module:
+    using {/Verse.org/Assets}
+    MyMesh<scoped {/example.com/Proj}> := class<final><scoped {/example.com/Proj}>(mesh_component):
+        @editable
+        var M_Surface<public>:material = external {}
+    MyMesh_asset<scoped {/example.com/Proj}>:mesh = external {}
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (module_definition
+      (using_declaration
+        (module_path))
+      (type_definition
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name)
+            value: (path_literal)))
+        value: (class_definition
+          specifiers: (specifier_list
+            (specifier
+              name: (specifier_name))
+            (specifier
+              name: (specifier_name)
+              value: (path_literal)))
+          base: (identifier)
+          (attribute
+            name: (identifier))
+          (var_declaration
+            name: (identifier)
+            name_specifiers: (specifier_list
+              (specifier
+                name: (specifier_name)))
+            type: (identifier)
+            value: (object_construction
+              type: (identifier)))))
+      (field_declaration
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name)
+            value: (path_literal)))
+        type: (identifier)
+        default: (object_construction
+          type: (identifier))))))
+
+==================
+empty struct
+==================
+
+Game<public> := module:
+    result<native><public> := struct<epic_internal>:
+        Value<native><public>:int
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    specifiers: (specifier_list
+      (specifier
+        name: (specifier_name)))
+    value: (module_definition
+      (type_definition
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        value: (struct_definition
+          specifiers: (specifier_list
+            (specifier
+              name: (specifier_name)))
+          (field_declaration
+            name: (identifier)
+            specifiers: (specifier_list
+              (specifier
+                name: (specifier_name))
+              (specifier
+                name: (specifier_name)))
+            type: (builtin_type)))))))
+
+==================
+empty interface
+==================
+
+Game<public> := module:
+    game_action_instigator<native><public> := interface<epic_internal>:
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    specifiers: (specifier_list
+      (specifier
+        name: (specifier_name)))
+    value: (module_definition
+      (type_definition
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        value: (interface_definition
+          specifiers: (specifier_list
+            (specifier
+              name: (specifier_name))))))))
+
+==================
+interface with methods
+==================
+
+Game<public> := module:
+    healthful<native><public> := interface<epic_internal>:
+        GetHealth<public>()<transacts>:float
+        SetHealth<public>(Health:float)<transacts>:void
+        GetMaxHealth<public>()<transacts>:float
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    specifiers: (specifier_list
+      (specifier
+        name: (specifier_name)))
+    value: (module_definition
+      (type_definition
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        value: (interface_definition
+          specifiers: (specifier_list
+            (specifier
+              name: (specifier_name)))
+          (function_definition
+            name: (identifier)
+            specifiers: (specifier_list
+              (specifier
+                name: (specifier_name)))
+            effect_specifiers: (specifier_list
+              (specifier
+                name: (specifier_name)))
+            return_type: (builtin_type))
+          (function_definition
+            name: (identifier)
+            specifiers: (specifier_list
+              (specifier
+                name: (specifier_name)))
+            parameters: (parameter_list
+              (positional_parameter
+                name: (identifier)
+                type: (builtin_type)))
+            effect_specifiers: (specifier_list
+              (specifier
+                name: (specifier_name)))
+            return_type: (builtin_type))
+          (function_definition
+            name: (identifier)
+            specifiers: (specifier_list
+              (specifier
+                name: (specifier_name)))
+            effect_specifiers: (specifier_list
+              (specifier
+                name: (specifier_name)))
+            return_type: (builtin_type)))))))
+
+==================
+class at end of file no newline
+==================
+
+Items<public> := module:
+    Widget<public> := class<final><concrete>(entity):
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    specifiers: (specifier_list
+      (specifier
+        name: (specifier_name)))
+    value: (module_definition
+      (type_definition
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name)))
+        value: (class_definition
+          specifiers: (specifier_list
+            (specifier
+              name: (specifier_name))
+            (specifier
+              name: (specifier_name)))
+          base: (identifier))))))

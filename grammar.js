@@ -33,6 +33,7 @@ module.exports = grammar({
     /\s/,              // all whitespace including \n
     $.line_comment,
     $.block_comment,
+    $.hash_gt_comment, // <#> single-line comment (UEFN digest file format)
   ],
 
   supertypes: $ => [
@@ -44,8 +45,19 @@ module.exports = grammar({
   word: $ => $.identifier,
 
   conflicts: $ => [
-    // identifier '(' can start a function_definition OR a call_expression
-    [$.function_definition, $._expression],
+    // identifier '(' can start a function_definition, type_definition, OR a call_expression
+    [$.function_definition, $.type_definition, $._expression],
+    // '(' can start an extension_function_definition, parenthesized expression, or module_scoped_identifier
+    [$.extension_function_definition, $._expression],
+    [$.extension_function_definition, $._expression, $.module_scoped_identifier],
+    // '(' can start a type_definition (via module_scoped_identifier name) or a parenthesized expression
+    [$.type_definition, $._expression, $.module_scoped_identifier],
+    // In enum_variant, '(' after name could be associated type OR start of next module_scoped_identifier variant
+    [$.enum_variant],
+    // _callable_expression is a subset of _expression; shared alternatives create lookahead conflicts
+    [$._callable_expression, $._expression],
+    [$.function_definition, $.type_definition, $._callable_expression, $._expression],
+    [$.function_definition, $.type_definition, $._callable_expression],
   ],
 
   rules: {
@@ -56,10 +68,12 @@ module.exports = grammar({
     source_file: $ => repeat($._top_level_item),
 
     _top_level_item: $ => choice(
+      $.attribute,
       $.using_declaration,
       $.var_declaration,
       $.set_statement,
       $.function_definition,
+      $.extension_function_definition,
       $.type_definition,
       $._expression,
     ),
@@ -70,7 +84,31 @@ module.exports = grammar({
 
     line_comment: $ => token(seq('#', /[^\n]*/)),
 
+    // <#> comment block used in UEFN-generated digest files.
+    // Matches `<#>` followed by rest-of-line, then zero or more continuation
+    // lines that begin with at least one space/tab (i.e. are indented).
+    // Stops at a blank line or an unindented line, so it never swallows real code.
+    hash_gt_comment: _ => token(seq(
+      '<', '#', '>', /[^\n]*/,
+      repeat(seq(/\n[ \t]+/, /[^\n]+/)),
+    )),
+
     // block_comment is external (supports nested <# ... #>)
+
+    // ─────────────────────────────────────────────
+    // Attributes: @name or @name { key := val, ... }
+    // ─────────────────────────────────────────────
+
+    attribute: $ => seq(
+      '@',
+      field('name', $.identifier),
+      optional(seq(token.immediate('('), field('arg', $._expression), ')')),
+      optional(seq(
+        '{',
+        optional($.field_initializer_list),
+        '}',
+      )),
+    ),
 
     // ─────────────────────────────────────────────
     // Using declarations: using { /path/to/module }
@@ -97,7 +135,9 @@ module.exports = grammar({
 
     var_declaration: $ => seq(
       'var',
-      field('name', $.identifier),
+      optional(field('var_specifiers', $.specifier_list)),
+      field('name', choice($.identifier, $.module_scoped_identifier)),
+      optional(field('name_specifiers', $.specifier_list)),
       ':',
       field('type', $._type),
       optional(seq('=', field('value', $._expression))),
@@ -120,7 +160,7 @@ module.exports = grammar({
     // ─────────────────────────────────────────────
 
     function_definition: $ => seq(
-      field('name', $.identifier),
+      field('name', choice($.identifier, $.module_scoped_identifier, $.operator_function_name, $.prefix_function_name)),
       optional(field('specifiers', $.specifier_list)),
       '(',
       optional(field('parameters', $.parameter_list)),
@@ -128,16 +168,34 @@ module.exports = grammar({
       optional(field('effect_specifiers', $.specifier_list)),
       ':',
       field('return_type', $._type),
-      '=',
-      field('body', $._function_body),
+      optional(seq('=', field('body', $._function_body))),
+    ),
+
+    // Extension function: (Receiver:Type).MethodName<specs>(params)<specs>:ReturnType
+    extension_function_definition: $ => seq(
+      '(',
+      field('receiver', $.receiver_parameter),
+      ')',
+      '.',
+      field('name', choice($.identifier, $.module_scoped_identifier)),
+      optional(field('specifiers', $.specifier_list)),
+      '(',
+      optional(field('parameters', $.parameter_list)),
+      ')',
+      optional(field('effect_specifiers', $.specifier_list)),
+      ':',
+      field('return_type', $._type),
+      optional(seq('=', field('body', $._function_body))),
     ),
 
     // Function body: indented block, brace block, or inline expression
-    _function_body: $ => choice(
+    // prec.left(PREC.CALL + 1) ensures REDUCE wins over SHIFT of '(' from next line
+    // (prevents 'external {}(nextLine...)' being parsed as a call expression)
+    _function_body: $ => prec.left(12, choice(
       $.brace_block,
       $.indented_block,    // INDENT stmts DEDENT (after '=')
       $._expression,       // inline expression on same line
-    ),
+    )),
 
     // ─────────────────────────────────────────────
     // Type definitions (via :=)
@@ -145,8 +203,9 @@ module.exports = grammar({
     // ─────────────────────────────────────────────
 
     type_definition: $ => seq(
-      field('name', $.identifier),
+      field('name', choice($.identifier, $.module_scoped_identifier)),
       optional(field('specifiers', $.specifier_list)),
+      optional(seq('(', optional(field('type_params', $.parameter_list)), ')')),
       ':=',
       field('value', choice(
         $.class_definition,
@@ -165,7 +224,12 @@ module.exports = grammar({
     class_definition: $ => seq(
       'class',
       optional(field('specifiers', $.specifier_list)),
-      optional(seq('(', field('base', $.identifier), ')')),
+      optional(seq(
+        '(',
+        field('base', $._type),
+        repeat(seq(',', field('base', $._type))),
+        ')',
+      )),
       $._type_body,
     ),
 
@@ -184,7 +248,12 @@ module.exports = grammar({
     interface_definition: $ => seq(
       'interface',
       optional(field('specifiers', $.specifier_list)),
-      optional(seq('(', field('base', $.identifier), ')')),
+      optional(seq(
+        '(',
+        field('base', $._type),
+        repeat(seq(',', field('base', $._type))),
+        ')',
+      )),
       $._type_body,
     ),
 
@@ -200,13 +269,16 @@ module.exports = grammar({
     ),
 
     _enum_body: $ => choice(
-      seq(':', $._indent, repeat($._enum_variant), $._dedent),
-      seq('{', repeat($._enum_variant), '}'),
+      seq(':', $._indent, repeat($.enum_variant), $._dedent),
+      seq('{', repeat($.enum_variant), '}'),
     ),
 
     _class_member: $ => choice(
+      $.attribute,
+      $.using_declaration,
       $.var_declaration,
       $.function_definition,
+      $.extension_function_definition,
       $.field_declaration,
       $.type_definition,
       $.set_statement,
@@ -214,15 +286,15 @@ module.exports = grammar({
 
     // Field declaration inside class/struct: Name<specs>?:type (= default)?
     field_declaration: $ => seq(
-      field('name', $.identifier),
+      field('name', choice($.identifier, $.module_scoped_identifier)),
       optional(field('specifiers', $.specifier_list)),
       ':',
       field('type', $._type),
       optional(seq('=', field('default', $._expression))),
     ),
 
-    _enum_variant: $ => seq(
-      field('name', $.identifier),
+    enum_variant:$ => seq(
+      field('name', choice($.identifier, $.module_scoped_identifier)),
       optional(seq('(', field('type', $._type), ')')),
     ),
 
@@ -235,7 +307,7 @@ module.exports = grammar({
     specifier: $ => seq(
       token.immediate('<'),
       field('name', alias($._specifier_name, $.specifier_name)),
-      optional(seq('{', field('value', $.identifier), '}')),
+      optional(seq('{', field('value', choice($.path_literal, $.identifier)), '}')),
       '>',
     ),
 
@@ -243,9 +315,9 @@ module.exports = grammar({
       'abstract', 'computes', 'constructor', 'private', 'public', 'protected',
       'final', 'decides', 'inline', 'native', 'override', 'suspends', 'transacts',
       'internal', 'reads', 'writes', 'allocates', 'scoped', 'converges',
-      'castable', 'concrete', 'unique', 'final_super', 'open', 'closed',
+      'castable', 'concrete', 'unique', 'final_super', 'final_super_base', 'open', 'closed',
       'native_callable', 'module_scoped_var_weak_map_key', 'epic_internal',
-      'persistable',
+      'persistable', 'persistent', 'predicts', 'uht_comparable', 'localizes',
     ),
 
     // ─────────────────────────────────────────────
@@ -255,16 +327,44 @@ module.exports = grammar({
     parameter_list: $ => seq(
       $._parameter,
       repeat(seq(',', $._parameter)),
+      optional($.where_clause),
+    ),
+
+    // Where clause: where T:type (generic type constraints)
+    // e.g. (Arrays:[][]t where t:type), (Result:success_type where success_type:type)
+    where_clause: $ => seq(
+      'where',
+      $.identifier,
+      ':',
+      $._type,
+      repeat(seq(',', $.identifier, ':', $._type)),
     ),
 
     _parameter: $ => choice(
       $.named_parameter,
       $.positional_parameter,
+      $.anonymous_parameter,
       $.tuple_parameter,
     ),
 
     positional_parameter: $ => seq(
+      field('name', choice($.identifier, $.module_scoped_identifier)),
+      ':',
+      field('type', $._type),
+    ),
+
+    // Receiver parameter in extension functions: supports where clause
+    // e.g. (Input:[]t where t:type), (InSet:classifiable_subset(t) where t:castable_subtype(k), k:type)
+    receiver_parameter: $ => seq(
       field('name', $.identifier),
+      ':',
+      field('type', $._type),
+      optional($.where_clause),
+    ),
+
+    // Anonymous parameter: just a type, no name (used in function_type)
+    // e.g. type {_(:collision_channel):collision_interaction}
+    anonymous_parameter: $ => seq(
       ':',
       field('type', $._type),
     ),
@@ -291,16 +391,58 @@ module.exports = grammar({
     _type: $ => choice(
       $.identifier,
       $.qualified_type,
+      $.generic_type,
+      $.module_scoped_identifier,
       $.optional_type,
       $.array_type,
       $.map_type,
       $.function_type,
+      $.constrained_type,
       $.tuple_type,
-      // built-in type keywords (without 'tuple'/'type' which have special forms)
+      // built-in type keywords (without 'tuple' which has special form)
+      // Note: 'type' can be standalone (constraint) or start of function_type/constrained_type
       alias(choice(
         'int', 'float', 'string', 'logic', 'char', 'any', 'void',
-        'comparable', 'rational',
+        'comparable', 'rational', 'type',
       ), $.builtin_type),
+    ),
+
+    // Generic/parameterized type: Name(TypeArg, ...)
+    // e.g. listenable(agent), generator(entity), castable_subtype(T), event()
+    // token.immediate prevents greedy matching across newlines (e.g. origin\n(next_line...))
+    generic_type: $ => prec(1, seq(
+      field('name', $.identifier),
+      token.immediate('('),
+      optional(seq(
+        field('argument', $._type),
+        repeat(seq(',', field('argument', $._type))),
+      )),
+      ')',
+    )),
+
+    // Module-scoped or scope-qualified identifier: (scope:)name
+    // e.g. (/Verse.org/SpatialMath:)transform, (/Fortnite.com:)UI, (local:)Red
+    // Also supports generic type arguments: (/path:)type_name(arg)
+    module_scoped_identifier: $ => seq(
+      '(',
+      field('scope', choice($.path_literal, $.identifier)),
+      ':',
+      ')',
+      choice($.identifier, $.generic_type, $.operator_function_name, $.prefix_function_name),
+    ),
+
+    // Operator function name: operator'symbol'
+    // e.g. operator'+', operator'*', operator'[]'
+    operator_function_name: $ => seq(
+      'operator',
+      token.immediate(/\'[^']*\'/),
+    ),
+
+    // Prefix operator function name: prefix'symbol'
+    // e.g. prefix'-', prefix'not'
+    prefix_function_name: $ => seq(
+      'prefix',
+      token.immediate(/\'[^']*\'/),
     ),
 
     qualified_type: $ => seq($.identifier, '.', $.identifier),
@@ -325,11 +467,29 @@ module.exports = grammar({
       '}',
     ),
 
+    // type{_Var:base_type where expr, expr, ...}
+    // Defines a constrained subtype, e.g. type{_X:int where 0 <= _X, _X <= 2147483647}
+    constrained_type: $ => seq(
+      'type',
+      '{',
+      field('variable', $.identifier),
+      ':',
+      field('base', $._type),
+      optional(seq(
+        'where',
+        $._expression,
+        repeat(seq(',', $._expression)),
+      )),
+      '}',
+    ),
+
     tuple_type: $ => seq(
       'tuple',
       '(',
-      $._type,
-      repeat(seq(',', $._type)),
+      optional(seq(
+        $._type,
+        repeat(seq(',', $._type)),
+      )),
       ')',
     ),
 
@@ -363,6 +523,7 @@ module.exports = grammar({
     ),
 
     _block_item: $ => choice(
+      $.attribute,
       $.var_declaration,
       $.set_statement,
       $.function_definition,
@@ -439,6 +600,21 @@ module.exports = grammar({
     // Expressions
     // ─────────────────────────────────────────────
 
+    // Expressions that are valid as the function (callee) in a call_expression.
+    // Excludes object_construction and non-callable expressions to prevent
+    // 'external {}(nextLine...)' from being parsed as a call expression.
+    _callable_expression: $ => choice(
+      $.identifier,
+      $.self_expression,
+      $.parenthesized_expression,
+      $.query_expression,
+      $.call_expression,
+      $.failable_call_expression,
+      $.member_access,
+      $.index_expression,
+      $.module_scoped_identifier,
+    ),
+
     _expression: $ => choice(
       $._literal,
       $.identifier,
@@ -458,6 +634,7 @@ module.exports = grammar({
       $.array_literal,
       $.logic_literal,
       $.option_expression,
+      $.function_type,
       $.if_expression,
       $.for_expression,
       $.loop_expression,
@@ -533,7 +710,7 @@ module.exports = grammar({
     )),
 
     call_expression: $ => prec.left(PREC.CALL, seq(
-      field('function', $._expression),
+      field('function', $._callable_expression),
       '(',
       optional(field('arguments', $.argument_list)),
       ')',

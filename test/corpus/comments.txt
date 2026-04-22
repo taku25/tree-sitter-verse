@@ -1,0 +1,114 @@
+==================
+line comment
+==================
+
+# this is a line comment
+Foo := class:
+    X:int = 5
+
+---
+
+(source_file
+  (line_comment)
+  (type_definition
+    name: (identifier)
+    value: (class_definition
+      (field_declaration
+        name: (identifier)
+        type: (builtin_type)
+        default: (integer_literal)))))
+
+==================
+block comment single line
+==================
+
+Pkg := module:
+    <# block comment #>
+    Foo := class:
+        X:int = 5
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (module_definition
+      (block_comment)
+      (type_definition
+        name: (identifier)
+        value: (class_definition
+          (field_declaration
+            name: (identifier)
+            type: (builtin_type)
+            default: (integer_literal)))))))
+
+==================
+block comment multiline
+==================
+
+Pkg := module:
+    <# first line
+       second line #>
+    Foo := class:
+        X:int = 5
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (module_definition
+      (block_comment)
+      (type_definition
+        name: (identifier)
+        value: (class_definition
+          (field_declaration
+            name: (identifier)
+            type: (builtin_type)
+            default: (integer_literal)))))))
+
+==================
+hash_gt warning single line
+==================
+
+Foo := class:
+    X:int = 5
+# comment
+<#> standalone warning
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (class_definition
+      (field_declaration
+        name: (identifier)
+        type: (builtin_type)
+        default: (integer_literal))))
+  (block_comment))
+
+==================
+hash_gt warning with continuation (indented)
+==================
+
+# Copyright notice
+
+        <#> SomeAsset contain properties that were not reflected.
+             Some parameters were skipped due to being an invalid identifier:
+                 'Edge Amount'
+                 'Tile Amount'
+
+Pkg<public> := module:
+
+---
+
+(source_file
+  (line_comment)
+  (hash_gt_comment)
+  (type_definition
+    name: (identifier)
+    specifiers: (specifier_list
+      (specifier
+        name: (specifier_name)))
+    value: (module_definition)))

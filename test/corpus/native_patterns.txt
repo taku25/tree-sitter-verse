@@ -1,0 +1,456 @@
+==================
+scene graph class with transform extension functions
+==================
+
+Sim := module:
+    using {/example.com/Math}
+    scene_graph<native><public> := class<unique>:
+        LocalTransform<native><public>:(/example.com/Math:)transform = external {}
+        RelativeTransform<native><public>:(/example.com/Math:)transform = external {}
+        BoundingRadius<native><public>:float = external {}
+    (Self:scene_graph).GetTransform<native><final><public>()<reads>:(/example.com/Math:)transform = external {}
+    (Self:scene_graph).SetTransform<native><final><public>(T:(/example.com/Math:)transform)<transacts>:void = external {}
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (module_definition
+      (using_declaration
+        (module_path))
+      (type_definition
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        value: (class_definition
+          specifiers: (specifier_list
+            (specifier
+              name: (specifier_name)))
+          (field_declaration
+            name: (identifier)
+            specifiers: (specifier_list
+              (specifier
+                name: (specifier_name))
+              (specifier
+                name: (specifier_name)))
+            type: (module_scoped_identifier
+              scope: (path_literal)
+              (identifier))
+            default: (object_construction
+              type: (identifier)))
+          (field_declaration
+            name: (identifier)
+            specifiers: (specifier_list
+              (specifier
+                name: (specifier_name))
+              (specifier
+                name: (specifier_name)))
+            type: (module_scoped_identifier
+              scope: (path_literal)
+              (identifier))
+            default: (object_construction
+              type: (identifier)))
+          (field_declaration
+            name: (identifier)
+            specifiers: (specifier_list
+              (specifier
+                name: (specifier_name))
+              (specifier
+                name: (specifier_name)))
+            type: (builtin_type)
+            default: (object_construction
+              type: (identifier)))))
+      (extension_function_definition
+        receiver: (receiver_parameter
+          name: (identifier)
+          type: (identifier))
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        effect_specifiers: (specifier_list
+          (specifier
+            name: (specifier_name)))
+        return_type: (module_scoped_identifier
+          scope: (path_literal)
+          (identifier))
+        body: (object_construction
+          type: (identifier)))
+      (extension_function_definition
+        receiver: (receiver_parameter
+          name: (identifier)
+          type: (identifier))
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        parameters: (parameter_list
+          (positional_parameter
+            name: (identifier)
+            type: (module_scoped_identifier
+              scope: (path_literal)
+              (identifier))))
+        effect_specifiers: (specifier_list
+          (specifier
+            name: (specifier_name)))
+        return_type: (builtin_type)
+        body: (object_construction
+          type: (identifier))))))
+
+==================
+player class with extension functions
+==================
+
+Players := module:
+    using {/example.com/Sim}
+    player<native><public> := class<unique>:
+        IsSpectator<native><public>:logic = external {}
+    (Self:player).GetFortCharacter<native><public>()<reads><decides>:fort_character = external {}
+    (Self:player).IsSkydiving<native><public>()<reads>:logic = external {}
+    (Self:player).Respawn<native><public>()<transacts>:void = external {}
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (module_definition
+      (using_declaration
+        (module_path))
+      (type_definition
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        value: (class_definition
+          specifiers: (specifier_list
+            (specifier
+              name: (specifier_name)))
+          (field_declaration
+            name: (identifier)
+            specifiers: (specifier_list
+              (specifier
+                name: (specifier_name))
+              (specifier
+                name: (specifier_name)))
+            type: (builtin_type)
+            default: (object_construction
+              type: (identifier)))))
+      (extension_function_definition
+        receiver: (receiver_parameter
+          name: (identifier)
+          type: (identifier))
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        effect_specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        return_type: (identifier)
+        body: (object_construction
+          type: (identifier)))
+      (extension_function_definition
+        receiver: (receiver_parameter
+          name: (identifier)
+          type: (identifier))
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        effect_specifiers: (specifier_list
+          (specifier
+            name: (specifier_name)))
+        return_type: (builtin_type)
+        body: (object_construction
+          type: (identifier)))
+      (extension_function_definition
+        receiver: (receiver_parameter
+          name: (identifier)
+          type: (identifier))
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        effect_specifiers: (specifier_list
+          (specifier
+            name: (specifier_name)))
+        return_type: (builtin_type)
+        body: (object_construction
+          type: (identifier))))))
+
+==================
+widget class with available annotation
+==================
+
+UI := module:
+    @available(EpicGames = "5.0")
+    widget<native><public> := class<abstract><unique><epic_internal>:
+        Slot<native><epic_internal>:?widget_slot = external {}
+    (Parent:widget).AddWidget<native><final><public>(Child:widget)<transacts>:void = external {}
+    (Parent:widget).RemoveWidget<native><final><public>(Child:widget)<transacts>:void = external {}
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (module_definition
+      (attribute
+        name: (identifier)
+        arg: (binary_expression
+          left: (identifier)
+          right: (string_literal
+            (string_content))))
+      (type_definition
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        value: (class_definition
+          specifiers: (specifier_list
+            (specifier
+              name: (specifier_name))
+            (specifier
+              name: (specifier_name))
+            (specifier
+              name: (specifier_name)))
+          (field_declaration
+            name: (identifier)
+            specifiers: (specifier_list
+              (specifier
+                name: (specifier_name))
+              (specifier
+                name: (specifier_name)))
+            type: (optional_type
+              (identifier))
+            default: (object_construction
+              type: (identifier)))))
+      (extension_function_definition
+        receiver: (receiver_parameter
+          name: (identifier)
+          type: (identifier))
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        parameters: (parameter_list
+          (positional_parameter
+            name: (identifier)
+            type: (identifier)))
+        effect_specifiers: (specifier_list
+          (specifier
+            name: (specifier_name)))
+        return_type: (builtin_type)
+        body: (object_construction
+          type: (identifier)))
+      (extension_function_definition
+        receiver: (receiver_parameter
+          name: (identifier)
+          type: (identifier))
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        parameters: (parameter_list
+          (positional_parameter
+            name: (identifier)
+            type: (identifier)))
+        effect_specifiers: (specifier_list
+          (specifier
+            name: (specifier_name)))
+        return_type: (builtin_type)
+        body: (object_construction
+          type: (identifier))))))
+
+==================
+tick event with event constructor default
+==================
+
+Events := module:
+    tick_event<native><public> := class<unique>:
+        OnTick<public>:event(float) = event(){}
+    cancelable<native><public> := class<unique>:
+        Cancel<native><final><public>()<transacts>:void = external {}
+        IsCanceled<native><final><public>()<reads>:logic = external {}
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (module_definition
+      (type_definition
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        value: (class_definition
+          specifiers: (specifier_list
+            (specifier
+              name: (specifier_name)))
+          (field_declaration
+            name: (identifier)
+            specifiers: (specifier_list
+              (specifier
+                name: (specifier_name)))
+            type: (generic_type
+              name: (identifier)
+              argument: (builtin_type))
+            default: (object_construction
+              type: (call_expression
+                function: (identifier))))))
+      (type_definition
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        value: (class_definition
+          specifiers: (specifier_list
+            (specifier
+              name: (specifier_name)))
+          (function_definition
+            name: (identifier)
+            specifiers: (specifier_list
+              (specifier
+                name: (specifier_name))
+              (specifier
+                name: (specifier_name))
+              (specifier
+                name: (specifier_name)))
+            effect_specifiers: (specifier_list
+              (specifier
+                name: (specifier_name)))
+            return_type: (builtin_type)
+            body: (object_construction
+              type: (identifier)))
+          (function_definition
+            name: (identifier)
+            specifiers: (specifier_list
+              (specifier
+                name: (specifier_name))
+              (specifier
+                name: (specifier_name))
+              (specifier
+                name: (specifier_name)))
+            effect_specifiers: (specifier_list
+              (specifier
+                name: (specifier_name)))
+            return_type: (builtin_type)
+            body: (object_construction
+              type: (identifier))))))))
+
+==================
+nested scoped assets with scoped class
+==================
+
+Items := module:
+    using {/example.com/Assets}
+    (/example.com/Assets:)CoolMeshes := module:
+        RockMesh<scoped {/example.com/Proj}>:mesh = external {}
+        TreeMesh<scoped {/example.com/Proj}>:mesh = external {}
+    CoolWidget<scoped {/example.com/Proj}> := class<final><scoped {/example.com/Proj}>(widget_component):
+        @editable
+        var BackgroundColor<public>:color = external {}
+    CoolWidget_asset<scoped {/example.com/Proj}>:widget_component_asset = external {}
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (module_definition
+      (using_declaration
+        (module_path))
+      (type_definition
+        name: (module_scoped_identifier
+          scope: (path_literal)
+          (identifier))
+        value: (module_definition
+          (field_declaration
+            name: (identifier)
+            specifiers: (specifier_list
+              (specifier
+                name: (specifier_name)
+                value: (path_literal)))
+            type: (identifier)
+            default: (object_construction
+              type: (identifier)))
+          (field_declaration
+            name: (identifier)
+            specifiers: (specifier_list
+              (specifier
+                name: (specifier_name)
+                value: (path_literal)))
+            type: (identifier)
+            default: (object_construction
+              type: (identifier)))))
+      (type_definition
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name)
+            value: (path_literal)))
+        value: (class_definition
+          specifiers: (specifier_list
+            (specifier
+              name: (specifier_name))
+            (specifier
+              name: (specifier_name)
+              value: (path_literal)))
+          base: (identifier)
+          (attribute
+            name: (identifier))
+          (var_declaration
+            name: (identifier)
+            name_specifiers: (specifier_list
+              (specifier
+                name: (specifier_name)))
+            type: (identifier)
+            value: (object_construction
+              type: (identifier)))))
+      (field_declaration
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name)
+            value: (path_literal)))
+        type: (identifier)
+        default: (object_construction
+          type: (identifier))))))

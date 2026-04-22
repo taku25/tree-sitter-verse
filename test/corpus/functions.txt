@@ -1,0 +1,330 @@
+==================
+top-level function with body
+==================
+
+using {/Verse.org/Native}
+
+Add(A:int, B:int):int=
+    A + B
+
+---
+
+(source_file
+  (using_declaration
+    (module_path))
+  (function_definition
+    name: (identifier)
+    parameters: (parameter_list
+      (positional_parameter
+        name: (identifier)
+        type: (builtin_type))
+      (positional_parameter
+        name: (identifier)
+        type: (builtin_type)))
+    return_type: (builtin_type)
+    body: (indented_block
+      (binary_expression
+        left: (identifier)
+        right: (identifier)))))
+
+==================
+top-level function with if body
+==================
+
+using {/Verse.org/Native}
+
+Clamp(Val:int, Min:int, Max:int):int=
+    if (Val = Min):
+        Min
+    else if (Val = Max):
+        Max
+    else:
+        Val
+
+---
+
+(source_file
+  (using_declaration
+    (module_path))
+  (function_definition
+    name: (identifier)
+    parameters: (parameter_list
+      (positional_parameter
+        name: (identifier)
+        type: (builtin_type))
+      (positional_parameter
+        name: (identifier)
+        type: (builtin_type))
+      (positional_parameter
+        name: (identifier)
+        type: (builtin_type)))
+    return_type: (builtin_type)
+    body: (indented_block
+      (if_expression
+        condition: (if_condition
+          (binary_expression
+            left: (identifier)
+            right: (identifier)))
+        consequence: (colon_block
+          (identifier))
+        condition: (if_condition
+          (binary_expression
+            left: (identifier)
+            right: (identifier)))
+        consequence: (colon_block
+          (identifier))
+        alternative: (colon_block
+          (identifier))))))
+
+==================
+extension function native
+==================
+
+Game := module:
+    entity<native><public> := class:
+        Health<native><public>:float
+    (Self:entity).TakeDamage<native><public>(Amount:float)<transacts>:void
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (module_definition
+      (type_definition
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        value: (class_definition
+          (field_declaration
+            name: (identifier)
+            specifiers: (specifier_list
+              (specifier
+                name: (specifier_name))
+              (specifier
+                name: (specifier_name)))
+            type: (builtin_type))))
+      (extension_function_definition
+        receiver: (receiver_parameter
+          name: (identifier)
+          type: (identifier))
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        parameters: (parameter_list
+          (positional_parameter
+            name: (identifier)
+            type: (builtin_type)))
+        effect_specifiers: (specifier_list
+          (specifier
+            name: (specifier_name)))
+        return_type: (builtin_type)))))
+
+==================
+extension function with module path parameter
+==================
+
+Game := module:
+    (Self:entity).SetTransform<native><public>(NewTransform:(/example.com/Math:)transform)<transacts>:void
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (module_definition
+      (extension_function_definition
+        receiver: (receiver_parameter
+          name: (identifier)
+          type: (identifier))
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        parameters: (parameter_list
+          (positional_parameter
+            name: (identifier)
+            type: (module_scoped_identifier
+              scope: (path_literal)
+              (identifier))))
+        effect_specifiers: (specifier_list
+          (specifier
+            name: (specifier_name)))
+        return_type: (builtin_type)))))
+
+==================
+extension function with external body
+==================
+
+Sim := module:
+    (InEventContext:?event_context).IsRunningInSim<native><final><public>()<reads>:logic = external {}
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (module_definition
+      (extension_function_definition
+        receiver: (receiver_parameter
+          name: (identifier)
+          type: (optional_type
+            (identifier)))
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        effect_specifiers: (specifier_list
+          (specifier
+            name: (specifier_name)))
+        return_type: (builtin_type)
+        body: (object_construction
+          type: (identifier))))))
+
+==================
+generic function with where clause
+==================
+
+Utils := module:
+    (Input:[]t where t:type).Slice<public>(Start:int, Count:int):[]t = external {}
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (module_definition
+      (extension_function_definition
+        receiver: (receiver_parameter
+          name: (identifier)
+          type: (array_type
+            (identifier))
+          (where_clause
+            (identifier)
+            (builtin_type)))
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name)))
+        parameters: (parameter_list
+          (positional_parameter
+            name: (identifier)
+            type: (builtin_type))
+          (positional_parameter
+            name: (identifier)
+            type: (builtin_type)))
+        return_type: (array_type
+          (identifier))
+        body: (object_construction
+          type: (identifier))))))
+
+==================
+function with decides effect
+==================
+
+Game := module:
+    entity<native><public> := class:
+        GetTag<native><final><public>()<reads><decides>:tag
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (module_definition
+      (type_definition
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        value: (class_definition
+          (function_definition
+            name: (identifier)
+            specifiers: (specifier_list
+              (specifier
+                name: (specifier_name))
+              (specifier
+                name: (specifier_name))
+              (specifier
+                name: (specifier_name)))
+            effect_specifiers: (specifier_list
+              (specifier
+                name: (specifier_name))
+              (specifier
+                name: (specifier_name)))
+            return_type: (identifier)))))))
+
+==================
+overloaded function definitions
+==================
+
+Math := module:
+    Lerp<native><public>(A:float, B:float, T:float)<reads>:float = external {}
+    Lerp<native><public>(A:vector3, B:vector3, T:float)<reads>:vector3 = external {}
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (module_definition
+      (function_definition
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        parameters: (parameter_list
+          (positional_parameter
+            name: (identifier)
+            type: (builtin_type))
+          (positional_parameter
+            name: (identifier)
+            type: (builtin_type))
+          (positional_parameter
+            name: (identifier)
+            type: (builtin_type)))
+        effect_specifiers: (specifier_list
+          (specifier
+            name: (specifier_name)))
+        return_type: (builtin_type)
+        body: (object_construction
+          type: (identifier)))
+      (function_definition
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        parameters: (parameter_list
+          (positional_parameter
+            name: (identifier)
+            type: (identifier))
+          (positional_parameter
+            name: (identifier)
+            type: (identifier))
+          (positional_parameter
+            name: (identifier)
+            type: (builtin_type)))
+        effect_specifiers: (specifier_list
+          (specifier
+            name: (specifier_name)))
+        return_type: (identifier)
+        body: (object_construction
+          type: (identifier))))))

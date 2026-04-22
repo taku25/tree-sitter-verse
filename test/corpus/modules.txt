@@ -1,0 +1,119 @@
+==================
+simple module with using
+==================
+
+MyModule := module:
+    using {/Verse.org/Native}
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (module_definition
+      (using_declaration
+        (module_path)))))
+
+==================
+module with scoped path name
+==================
+
+(/example.com/Pkg:)Sub := module:
+    using {/Verse.org/Native}
+
+---
+
+(source_file
+  (type_definition
+    name: (module_scoped_identifier
+      scope: (path_literal)
+      (identifier))
+    value: (module_definition
+      (using_declaration
+        (module_path)))))
+
+==================
+nested modules
+==================
+
+Outer := module:
+    Inner := module:
+        using {/Verse.org/Assets}
+        Field:texture = external {}
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (module_definition
+      (type_definition
+        name: (identifier)
+        value: (module_definition
+          (using_declaration
+            (module_path))
+          (field_declaration
+            name: (identifier)
+            type: (identifier)
+            default: (object_construction
+              type: (identifier))))))))
+
+==================
+nested module with path sub-module
+==================
+
+Outer := module:
+    Inner := module:
+        Field:texture = external {}
+        (/example.com/Outer/Inner:)Sub := module:
+            using {/Verse.org/Assets}
+            Field2:texture = external {}
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (module_definition
+      (type_definition
+        name: (identifier)
+        value: (module_definition
+          (field_declaration
+            name: (identifier)
+            type: (identifier)
+            default: (object_construction
+              type: (identifier)))
+          (type_definition
+            name: (module_scoped_identifier
+              scope: (path_literal)
+              (identifier))
+            value: (module_definition
+              (using_declaration
+                (module_path))
+              (field_declaration
+                name: (identifier)
+                type: (identifier)
+                default: (object_construction
+                  type: (identifier))))))))))
+
+==================
+module with scoped specifier identifier
+==================
+
+Players<public> := module:
+    using {/example.com/Math}
+    using {/Verse.org/Simulation}
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    specifiers: (specifier_list
+      (specifier
+        name: (specifier_name)))
+    value: (module_definition
+      (using_declaration
+        (module_path))
+      (using_declaration
+        (module_path)))))

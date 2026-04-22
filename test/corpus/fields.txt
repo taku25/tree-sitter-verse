@@ -1,0 +1,263 @@
+==================
+field with external default
+==================
+
+Assets := module:
+    MyMesh<scoped {/example.com/Proj}>:mesh = external {}
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (module_definition
+      (field_declaration
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name)
+            value: (path_literal)))
+        type: (identifier)
+        default: (object_construction
+          type: (identifier))))))
+
+==================
+field with module path type
+==================
+
+Transforms := module:
+    using {/example.com/Math}
+    entity<native><public> := class:
+        LocalTransform<native><public>:(/example.com/Math:)transform
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (module_definition
+      (using_declaration
+        (module_path))
+      (type_definition
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        value: (class_definition
+          (field_declaration
+            name: (identifier)
+            specifiers: (specifier_list
+              (specifier
+                name: (specifier_name))
+              (specifier
+                name: (specifier_name)))
+            type: (module_scoped_identifier
+              scope: (path_literal)
+              (identifier))))))))
+
+==================
+event field with event constructor default
+==================
+
+Game := module:
+    board_game<public> := class<final><concrete>(entity):
+        EndGoalReached<public>:event() = event(){}
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (module_definition
+      (type_definition
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name)))
+        value: (class_definition
+          specifiers: (specifier_list
+            (specifier
+              name: (specifier_name))
+            (specifier
+              name: (specifier_name)))
+          base: (identifier)
+          (field_declaration
+            name: (identifier)
+            specifiers: (specifier_list
+              (specifier
+                name: (specifier_name)))
+            type: (generic_type
+              name: (identifier))
+            default: (object_construction
+              type: (call_expression
+                function: (identifier)))))))))
+
+==================
+class with external field and sub-module
+==================
+
+Assets := module:
+    MyMesh<scoped {/example.com/Proj}> := class<final><scoped {/example.com/Proj}>(mesh_component):
+        @editable
+        var M_Surface<public>:material = external {}
+    (/example.com/Assets:)SubPkg := module:
+        MyMesh_asset:mesh = external {}
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (module_definition
+      (type_definition
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name)
+            value: (path_literal)))
+        value: (class_definition
+          specifiers: (specifier_list
+            (specifier
+              name: (specifier_name))
+            (specifier
+              name: (specifier_name)
+              value: (path_literal)))
+          base: (identifier)
+          (attribute
+            name: (identifier))
+          (var_declaration
+            name: (identifier)
+            name_specifiers: (specifier_list
+              (specifier
+                name: (specifier_name)))
+            type: (identifier)
+            value: (object_construction
+              type: (identifier)))))
+      (type_definition
+        name: (module_scoped_identifier
+          scope: (path_literal)
+          (identifier))
+        value: (module_definition
+          (field_declaration
+            name: (identifier)
+            type: (identifier)
+            default: (object_construction
+              type: (identifier))))))))
+
+==================
+var declaration top level
+==================
+
+Game := module:
+    var Score<public>:int = 0
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (module_definition
+      (var_declaration
+        name: (identifier)
+        name_specifiers: (specifier_list
+          (specifier
+            name: (specifier_name)))
+        type: (builtin_type)
+        value: (integer_literal)))))
+
+==================
+editable field
+==================
+
+Game := module:
+    widget_component<native><public> := class:
+        @editable
+        var BackgroundColor<public>:color = external {}
+        @editable
+        var bRenderTranslucency<public>:logic = external {}
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (module_definition
+      (type_definition
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        value: (class_definition
+          (attribute
+            name: (identifier))
+          (var_declaration
+            name: (identifier)
+            name_specifiers: (specifier_list
+              (specifier
+                name: (specifier_name)))
+            type: (identifier)
+            value: (object_construction
+              type: (identifier)))
+          (attribute
+            name: (identifier))
+          (var_declaration
+            name: (identifier)
+            name_specifiers: (specifier_list
+              (specifier
+                name: (specifier_name)))
+            type: (builtin_type)
+            value: (object_construction
+              type: (identifier))))))))
+
+==================
+multiple fields mixed access
+==================
+
+Game := module:
+    entity<native><public> := class:
+        HP<native><public>:int
+        MaxHP<native><public>:int
+        Level<native><epic_internal>:int
+
+---
+
+(source_file
+  (type_definition
+    name: (identifier)
+    value: (module_definition
+      (type_definition
+        name: (identifier)
+        specifiers: (specifier_list
+          (specifier
+            name: (specifier_name))
+          (specifier
+            name: (specifier_name)))
+        value: (class_definition
+          (field_declaration
+            name: (identifier)
+            specifiers: (specifier_list
+              (specifier
+                name: (specifier_name))
+              (specifier
+                name: (specifier_name)))
+            type: (builtin_type))
+          (field_declaration
+            name: (identifier)
+            specifiers: (specifier_list
+              (specifier
+                name: (specifier_name))
+              (specifier
+                name: (specifier_name)))
+            type: (builtin_type))
+          (field_declaration
+            name: (identifier)
+            specifiers: (specifier_list
+              (specifier
+                name: (specifier_name))
+              (specifier
+                name: (specifier_name)))
+            type: (builtin_type)))))))
