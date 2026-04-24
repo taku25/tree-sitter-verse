@@ -24,6 +24,12 @@ typedef struct {
   uint32_t pending_dedents;
   /* bracket depth: () [] {}; INDENT/DEDENT suppressed when > 0 */
   uint32_t bracket_depth;
+  /* column of the last non-blank, non-comment content line found during a
+     DEDENT scan.  Used to detect "phantom INDENT" when the opener statement
+     (e.g. `scene_event := interface:`) lives at a higher column than the
+     current indent-stack top, so the next sibling at the same column is NOT
+     mistaken for a genuine child of the empty body. */
+  uint32_t last_stmt_col;
 } Scanner;
 
 /* ─────────────────────────────────────────────────────────────────
@@ -73,6 +79,55 @@ static bool scan_block_comment(TSLexer *lexer) {
   /* Unterminated — still return true so the lexer can recover. */
   lexer->result_symbol = BLOCK_COMMENT;
   return true;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+ * find_next_content_col: scan forward (consuming whitespace/comments
+ * via skip()) and return the column of the first non-blank,
+ * non-comment line.
+ *
+ * Skips:
+ *   - blank lines
+ *   - `#` line-comments
+ *
+ * On entry  : lexer->lookahead is the first char of the first line to
+ *             examine (newlines before the loop must be consumed by
+ *             the caller).
+ * On return : lexer->lookahead is the first non-whitespace char of the
+ *             returned content line (or 0 at EOF).
+ *             Returns UINT32_MAX on EOF.
+ * ───────────────────────────────────────────────────────────────── */
+static uint32_t find_next_content_col(TSLexer *lexer) {
+  while (true) {
+    /* ── Skip leading newlines ──────────────────────────────────── */
+    while (lexer->lookahead == '\n' || lexer->lookahead == '\r')
+      skip(lexer);
+    if (lexer->lookahead == 0) return UINT32_MAX;
+
+    /* ── Count column of this line ──────────────────────────────── */
+    uint32_t col = 0;
+    while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
+      if (lexer->lookahead == '\t') col = (col + 8) & ~7u;
+      else col++;
+      skip(lexer);
+    }
+
+    /* ── Blank line ─────────────────────────────────────────────── */
+    if (lexer->lookahead == '\n' || lexer->lookahead == '\r')
+      continue;
+    if (lexer->lookahead == 0) return UINT32_MAX;
+
+    /* ── `#` line comment ───────────────────────────────────────── */
+    if (lexer->lookahead == '#') {
+      while (lexer->lookahead != '\n' && lexer->lookahead != '\r' &&
+             lexer->lookahead != 0)
+        skip(lexer);
+      continue;
+    }
+
+    /* ── Any other content (including `<#>`) ───────────────────── */
+    return col;
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -183,75 +238,52 @@ static bool scan(Scanner *s, TSLexer *lexer, const bool *valid_symbols) {
     skip(lexer);
   }
 
-  /* Count the column of the next non-whitespace, non-comment line. */
-  while (true) {
-    /* Count leading spaces on this line. */
-    uint32_t col = 0;
-    while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
-      if (lexer->lookahead == '\t') col = (col + 8) & ~7u; /* tab = 8 */
-      else col++;
-      skip(lexer);
-    }
+  /* Find the column of the next non-blank, non-comment content line.
+     find_next_content_col() also skips <#> hash_gt_comments and their
+     indented continuation lines. */
+  uint32_t col = find_next_content_col(lexer);
 
-    /* Skip blank lines and comment-only lines. */
-    if (lexer->lookahead == '\n' || lexer->lookahead == '\r') {
-      while (lexer->lookahead == '\n' || lexer->lookahead == '\r') skip(lexer);
-      continue;
-    }
-    if (lexer->lookahead == '#') {
-      /* skip to end of line */
-      while (lexer->lookahead != '\n' && lexer->lookahead != '\r' &&
-             lexer->lookahead != 0) {
-        skip(lexer);
-      }
-      while (lexer->lookahead == '\n' || lexer->lookahead == '\r') skip(lexer);
-      continue;
-    }
-
-    /* EOF reached after consuming newlines/blanks/comments. */
-    if (lexer->lookahead == 0) {
-      uint32_t prev = current_indent(s);
-      /* Prefer closing open bodies at EOF over opening new phantom bodies.
-         Only emit phantom INDENT if DEDENT is not also valid (i.e., we're
-         strictly waiting for an INDENT to start an empty body). */
-      if (valid_symbols[INDENT] && !valid_symbols[DEDENT]) {
-        if (s->stack_size < MAX_INDENT) {
-          s->indent_stack[s->stack_size++] = prev + 1;
-        }
-        lexer->result_symbol = INDENT;
-        return true;
-      }
-      if (valid_symbols[DEDENT] && s->stack_size > 1) {
-        s->stack_size--;
-        lexer->result_symbol = DEDENT;
-        return true;
-      }
-      return false;
-    }
-
+  /* ── EOF reached after consuming newlines/blanks/comments ─────── */
+  if (col == UINT32_MAX || lexer->lookahead == 0) {
     uint32_t prev = current_indent(s);
-
-    if (col > prev && valid_symbols[INDENT]) {
-      /* Increase in indentation. */
+    /* Prefer closing open bodies at EOF over opening new phantom bodies.
+       Only emit phantom INDENT if DEDENT is not also valid (i.e., we're
+       strictly waiting for an INDENT to start an empty body). */
+    if (valid_symbols[INDENT] && !valid_symbols[DEDENT]) {
       if (s->stack_size < MAX_INDENT) {
-        s->indent_stack[s->stack_size++] = col;
+        s->indent_stack[s->stack_size++] = prev + 1;
       }
       lexer->result_symbol = INDENT;
       return true;
     }
+    if (valid_symbols[DEDENT] && s->stack_size > 1) {
+      s->stack_size--;
+      lexer->result_symbol = DEDENT;
+      return true;
+    }
+    return false;
+  }
 
-    /* Empty body: grammar expects INDENT but next non-blank content is at
-       the same indentation level (or lower). This happens with abstract/native
-       classes that have no members (e.g. `abstract_class<native>:` immediately
-       followed by a sibling declaration at the same level).
-       Emit a phantom INDENT by pushing (prev+1) and schedule an immediate
-       DEDENT via pending_dedents=1. This produces an empty block and prevents
-       the next sibling from being erroneously nested inside this empty body.
-       After INDENT is consumed, the scanner is called again at the same lexer
-       position (still pointing at the sibling's first character, not a newline).
-       Without pending_dedents, the `lookahead != '\n'` guard would return false
-       and DEDENT would never fire, causing infinite nesting. */
-    if (col <= prev && valid_symbols[INDENT]) {
+  uint32_t prev = current_indent(s);
+
+  if (col > prev && valid_symbols[INDENT]) {
+    /* col > stack-top.  But is it a genuine child, or a sibling that
+       only appears deeper because the indent-stack was popped past the
+       opener's column?
+       Example:
+         component := class:   # col 0, body at col 8
+           ...
+         scene_event := interface:  # col 4 (sibling, NOT stack-tracked)
+         entity := class:           # col 4 — should be a sibling of
+                                    # scene_event, NOT a child of its
+                                    # empty interface body.
+       After the DEDENT from the component body (col 8→0) we set
+       last_stmt_col = 4 (the sibling column we landed on).  When
+       scene_event's interface needs INDENT, prev=0 but
+       last_stmt_col=4, so col 4 > prev but col <= last_stmt_col →
+       phantom INDENT. */
+    if (col <= s->last_stmt_col) {
+      /* Phantom INDENT: the "child" is actually a sibling. */
       if (s->stack_size < MAX_INDENT) {
         s->indent_stack[s->stack_size++] = prev + 1;
       }
@@ -259,28 +291,56 @@ static bool scan(Scanner *s, TSLexer *lexer, const bool *valid_symbols) {
       lexer->result_symbol = INDENT;
       return true;
     }
-
-    if (col < prev) {
-      /* Decrease in indentation: may need multiple DEDENTs. */
-      uint32_t dedents = 0;
-      while (s->stack_size > 0 && s->indent_stack[s->stack_size - 1] > col) {
-        s->stack_size--;
-        dedents++;
-      }
-      if (dedents > 0 && valid_symbols[DEDENT]) {
-        /* Emit first DEDENT now; stash remaining. */
-        s->pending_dedents = dedents - 1;
-        /* stack_size already decremented above for all levels;
-           restore and let pending_dedents decrement one by one. */
-        s->stack_size += dedents; /* undo: will be re-decremented */
-        s->stack_size--;          /* first DEDENT */
-        lexer->result_symbol = DEDENT;
-        return true;
-      }
+    /* Genuine increase in indentation. */
+    if (s->stack_size < MAX_INDENT) {
+      s->indent_stack[s->stack_size++] = col;
     }
-
-    return false;
+    lexer->result_symbol = INDENT;
+    return true;
   }
+
+  /* Empty body: grammar expects INDENT but next non-blank content is at
+     the same indentation level (or lower). This happens with abstract/native
+     classes that have no members (e.g. `abstract_class<native>:` immediately
+     followed by a sibling declaration at the same level).
+     Emit a phantom INDENT by pushing (prev+1) and schedule an immediate
+     DEDENT via pending_dedents=1. This produces an empty block and prevents
+     the next sibling from being erroneously nested inside this empty body.
+     After INDENT is consumed, the scanner is called again at the same lexer
+     position (still pointing at the sibling's first character, not a newline).
+     Without pending_dedents, the `lookahead != '\n'` guard would return false
+     and DEDENT would never fire, causing infinite nesting. */
+  if (col <= prev && valid_symbols[INDENT]) {
+    if (s->stack_size < MAX_INDENT) {
+      s->indent_stack[s->stack_size++] = prev + 1;
+    }
+    s->pending_dedents = 1;
+    lexer->result_symbol = INDENT;
+    return true;
+  }
+
+  if (col < prev) {
+    /* Decrease in indentation: may need multiple DEDENTs.
+       Record where we landed so future phantom-INDENT detection works. */
+    s->last_stmt_col = col;
+    uint32_t dedents = 0;
+    while (s->stack_size > 0 && s->indent_stack[s->stack_size - 1] > col) {
+      s->stack_size--;
+      dedents++;
+    }
+    if (dedents > 0 && valid_symbols[DEDENT]) {
+      /* Emit first DEDENT now; stash remaining. */
+      s->pending_dedents = dedents - 1;
+      /* stack_size already decremented above for all levels;
+         restore and let pending_dedents decrement one by one. */
+      s->stack_size += dedents; /* undo: will be re-decremented */
+      s->stack_size--;          /* first DEDENT */
+      lexer->result_symbol = DEDENT;
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -314,6 +374,8 @@ unsigned tree_sitter_verse_external_scanner_serialize(void *payload,
   unsigned copy = s->stack_size < MAX_INDENT ? s->stack_size : MAX_INDENT;
   memcpy(buffer + n, s->indent_stack, copy * sizeof(uint32_t));
   n += copy * sizeof(uint32_t);
+  memcpy(buffer + n, &s->last_stmt_col, sizeof(uint32_t));
+  n += sizeof(uint32_t);
   return n;
 }
 
@@ -330,4 +392,8 @@ void tree_sitter_verse_external_scanner_deserialize(void *payload,
   unsigned copy = s->stack_size < MAX_INDENT ? s->stack_size : MAX_INDENT;
   if (n + copy * sizeof(uint32_t) > length) return;
   memcpy(s->indent_stack, buffer + n, copy * sizeof(uint32_t));
+  n += copy * sizeof(uint32_t);
+  if (n + sizeof(uint32_t) <= length) {
+    memcpy(&s->last_stmt_col, buffer + n, sizeof(uint32_t));
+  }
 }
