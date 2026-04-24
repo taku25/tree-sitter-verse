@@ -5,6 +5,7 @@
 ; ─────────────────────────────────────────────
 (line_comment) @comment
 (block_comment) @comment
+(hash_gt_comment) @comment
 
 ; ─────────────────────────────────────────────
 ; Keywords
@@ -87,26 +88,36 @@
 
 ; Function definitions
 (function_definition
-  name: (_) @function)
+  name: (_) @function
+  (#set! priority 110))
+
+(extension_function_definition
+  name: (_) @function
+  (#set! priority 110))
 
 ; Field names in declarations
 (field_declaration
-  name: (identifier) @variable.member)
+  name: (identifier) @variable.member
+  (#set! priority 110))
 
 ; Field initializers in object construction
 (field_initializer
-  name: (identifier) @variable.member)
+  name: (identifier) @variable.member
+  (#set! priority 110))
 
 ; Variable declarations
 (var_declaration
-  name: (identifier) @variable)
+  name: (identifier) @variable
+  (#set! priority 110))
 
 ; Parameters
 (positional_parameter
-  name: (identifier) @variable.parameter)
+  name: (identifier) @variable.parameter
+  (#set! priority 110))
 
 (named_parameter
-  name: (identifier) @variable.parameter)
+  name: (identifier) @variable.parameter
+  (#set! priority 110))
 
 ; Function calls
 (call_expression
@@ -214,6 +225,13 @@
   ":"
   ";"
 ] @punctuation.delimiter
+
+; ─────────────────────────────────────────────
+; Attributes (@available, @editable, etc.)
+; ─────────────────────────────────────────────
+(attribute
+  "@" @punctuation.special
+  name: (identifier) @attribute)
 
 ; ─────────────────────────────────────────────
 ; Specifiers (angle-bracket annotations)
