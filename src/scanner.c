@@ -82,13 +82,15 @@ static bool scan_block_comment(TSLexer *lexer) {
 }
 
 /* ─────────────────────────────────────────────────────────────────
- * find_next_content_col: scan forward (consuming whitespace/comments
- * via skip()) and return the column of the first non-blank,
- * non-comment line.
+ * find_next_content_col: scan forward (consuming only whitespace/blank
+ * lines via skip()) and return the column of the first non-blank line.
  *
  * Skips:
- *   - blank lines
- *   - `#` line-comments
+ *   - blank lines (lines with only whitespace)
+ *
+ * Does NOT skip `#` line comments or `<#>` block comments; they are
+ * treated as regular content so that the grammar can parse them as
+ * `line_comment` / `hash_gt_comment` tokens.
  *
  * On entry  : lexer->lookahead is the first char of the first line to
  *             examine (newlines before the loop must be consumed by
@@ -117,15 +119,7 @@ static uint32_t find_next_content_col(TSLexer *lexer) {
       continue;
     if (lexer->lookahead == 0) return UINT32_MAX;
 
-    /* ── `#` line comment ───────────────────────────────────────── */
-    if (lexer->lookahead == '#') {
-      while (lexer->lookahead != '\n' && lexer->lookahead != '\r' &&
-             lexer->lookahead != 0)
-        skip(lexer);
-      continue;
-    }
-
-    /* ── Any other content (including `<#>`) ───────────────────── */
+    /* ── Any content (including `#` comments and `<#>`) ───────── */
     return col;
   }
 }

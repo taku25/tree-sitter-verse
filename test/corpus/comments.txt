@@ -86,7 +86,8 @@ Foo := class:
         name: (identifier)
         type: (builtin_type)
         default: (integer_literal))))
-  (block_comment))
+  (line_comment)
+  (hash_gt_comment))
 
 ==================
 hash_gt warning with continuation (indented)
